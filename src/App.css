@@ -1,1 +1,27 @@
+.hero {
+  background-image: url("./assets/imgs/hero\ pattern.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
 
+.hero h1 {
+  color: var(--primary-light) !important;
+  position: relative;
+}
+
+.hero h1::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  background-color: var(--primary-light);
+  opacity: 0.2;
+}
+
+.hero p {
+  font-family: var(--other);
+  color: var(--primary-900);
+}
