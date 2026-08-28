@@ -13,8 +13,15 @@ function Menu() {
   return (
     <div className="menu min-h-screen" id="menu">
       <div className="container mx-auto w-[90%] min-h-screen flex flex-col items-center py-15 gap-2 md:gap-4">
-        <h1 className="text-4xl mb-10">امروز چی می چسبه؟</h1>
-        <ul className="w-full grid grid-cols-5 gap-5">
+        <div className="title">
+          <h1 className="text-4xl mb-10">امروز چی می چسبه؟</h1>
+          <div className="lines">
+            <div className="line"></div>
+            <div className="line"></div>
+            <div className="line"></div>
+          </div>
+        </div>
+        <ul className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-5">
           <MenuItem
             icon={Coffee}
             title="اسپرسوبار"

@@ -1,5 +1,4 @@
 .hero {
-  /* background-image: url("./assets/imgs/hero\ pattern.png"); */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -56,7 +55,73 @@
   margin-top: 180px;
 }
 
+.menu .title {
+  position: relative;
+}
+
+.menu .title .lines {
+  width: 40px;
+  height: 40px;
+  position: absolute;
+  top: -30%;
+  left: -10%;
+}
+
+.menu .title .line {
+  height: 3px;
+  background-color: var(--primary-300);
+  position: absolute;
+  border-radius: 3px;
+}
+
+.menu .title .line:nth-child(1) {
+  width: 15px;
+  top: 30%;
+  right: 0;
+  transform: rotate(-95deg);
+}
+
+.menu .title .line:nth-child(2) {
+  width: 25px;
+  top: 50%;
+  left: 40%;
+  transform: rotate(45deg) translate(-50%, 50%);
+}
+
+.menu .title .line:nth-child(3) {
+  width: 15px;
+  top: 70%;
+  left: 20%;
+  transform: rotate(5deg);
+}
+
 .menu .menu-item {
   transition: all 0.2s ease;
   cursor: pointer;
+}
+
+@media only screen and (max-width: 768px) {
+  .hero-bottom {
+    height: calc(100dvh + 80px);
+  }
+
+  .hero-bottom .wave {
+    bottom: -40px;
+  }
+
+  .arrow {
+    bottom: -25%;
+  }
+}
+
+@media only screen and (max-width: 480px) {
+  .hero-bottom .wave {
+    bottom: -20px;
+  }
+
+  .arrow {
+    right: 50%;
+    transform: translateX(50%);
+    bottom: -23%;
+  }
 }
