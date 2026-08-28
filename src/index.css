@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 @font-face {
   font-family: "estedad-bold";
   src: url("./assets/fonts/Estedad-Black.woff2");
@@ -28,7 +30,7 @@
   --primary-800: #1f2f2a;
   --primary-900: #151f1c;
 
-  --bg: #f7faf9;
+  --bg: #f3f7f5;
   --bg-secondary: #eef4f2;
   --surface: #ffffff;
   --surface-hover: #f3f7f5;
@@ -52,6 +54,11 @@
   --bold: "estedad-bold", sans-serif;
   --regular: "estedad-regular", sans-serif;
   --other: "negare", sans-serif;
+}
+
+::selection {
+  background-color: var(--primary-light);
+  color: var(--text-on-primary);
 }
 
 * {
@@ -86,4 +93,17 @@ a,
 li {
   font-family: var(--regular);
   color: var(--text-secondary);
+}
+
+.btn-primary {
+  background-color: var(--primary-light);
+  color: var(--text-on-primary);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
 }
