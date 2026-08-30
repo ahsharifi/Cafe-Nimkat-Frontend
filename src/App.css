@@ -100,6 +100,20 @@
   cursor: pointer;
 }
 
+footer {
+  background-color: var(--primary);
+  color: var(--bg);
+}
+
+footer span {
+  color: var(--bg);
+}
+
+footer p {
+  color: var(--bg);
+  font-family: var(--other);
+}
+
 @media only screen and (max-width: 768px) {
   .hero-bottom {
     height: calc(100dvh + 80px);
