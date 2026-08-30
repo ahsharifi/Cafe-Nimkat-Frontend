@@ -4,7 +4,7 @@ interface MenuItemProps {
   description: string[];
 }
 
-function MenuItem({ icon, title, description }: MenuItemProps) {
+function MenuCatrgory({ icon, title, description }: MenuItemProps) {
   return (
     <li className="menu-item bg-white rounded-xl shadow-gray-200 shadow-lg flex flex-col items-center p-5 gap-2 hover:bg-gray-50">
       <div className="icon w-20 h-20 p-4 bg-green-50 rounded-full mb-2">
@@ -18,4 +18,4 @@ function MenuItem({ icon, title, description }: MenuItemProps) {
   );
 }
 
-export default MenuItem;
+export default MenuCatrgory;

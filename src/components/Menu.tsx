@@ -7,7 +7,7 @@ import ColdDrink from "../assets/icons/cold-drink.png";
 import Cake from "../assets/icons/cake.png";
 import Food from "../assets/icons/food.png";
 import IceCream from "../assets/icons/ice-cream.png";
-import MenuItem from "./MenuItem";
+import MenuCatrgory from "./MenuCatrgory";
 
 function Menu() {
   return (
@@ -22,52 +22,52 @@ function Menu() {
           </div>
         </div>
         <ul className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-          <MenuItem
+          <MenuCatrgory
             icon={Coffee}
             title="اسپرسوبار"
             description={["اسپرسو", "ترک", "کاپوچینو"]}
           />
-          <MenuItem
+          <MenuCatrgory
             icon={ColdCoffee}
             title="کلد کافی"
             description={["آفوگاتو", "آیس لاته"]}
           />
-          <MenuItem
+          <MenuCatrgory
             icon={HotDrink}
             title="نوشیدنی گرم"
             description={["شیربیسکوئیت", "هات چاکلت"]}
           />
-          <MenuItem
+          <MenuCatrgory
             icon={Tea}
             title="چای"
             description={["ماسالا", "هل", "دارچین"]}
           />
-          <MenuItem
+          <MenuCatrgory
             icon={MilkShake}
             title="میلک شیک"
             description={["شکلاتی", "نوتلا", "شیک پسته"]}
           />
-          <MenuItem
+          <MenuCatrgory
             icon={ColdDrink}
             title="نوشیدنی سرد"
             description={["موهیتو", "پینک", "شیرموز"]}
           />
-          <MenuItem
+          <MenuCatrgory
             icon={Cake}
             title="کیک و دسر"
             description={["وافل نوتلا", "چیزکیک", "ترامیسو"]}
           />
-          <MenuItem
+          <MenuCatrgory
             icon={Food}
             title="غذا و سالاد"
             description={["پاستا آلفردو", "ذرت مکزیکی"]}
           />
-          <MenuItem
+          <MenuCatrgory
             icon={IceCream}
             title="بستنی"
             description={["شکلاتی", "توت فرنگی", "گردویی"]}
           />
-          <MenuItem
+          <MenuCatrgory
             icon={Coffee}
             title="دمنوش"
             description={["آرامبخش", "ضدسرماخوردگی"]}
