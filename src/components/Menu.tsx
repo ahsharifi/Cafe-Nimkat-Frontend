@@ -59,26 +59,34 @@ function Menu() {
             <div className="line"></div>
           </div>
         </div>
+        {/* پاپ‌اور */}
         {isOpen && (
-          <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center">
-            <div className="relative w-[90%] max-w-md p-8 bg-white border border-gray-300 shadow-xl rounded-xl flex flex-col items-center z-50">
+          <div className="fixed inset-0 z-40 flex items-center justify-center">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/40 animate-fade-in"
+              onClick={closePopover}
+            />
+
+            {/* Modal */}
+            <div className="relative w-[90%] max-w-md p-8 bg-white border border-gray-200 shadow-2xl rounded-2xl flex flex-col items-center z-50 animate-scale-in">
               <button
                 onClick={closePopover}
-                className="absolute top-3 left-3 text-gray-500 hover:text-gray-800 text-xl"
+                className="absolute top-4 left-4 text-gray-400 hover:text-gray-700 text-xl transition"
               >
                 ✕
               </button>
 
-              <h3 className="text-2xl border-b border-b-gray-300 w-full text-center pb-3 mb-4">
+              <h3 className="text-2xl border-b border-gray-200 w-full text-center pb-3 mb-4">
                 آیتم‌های {category}
               </h3>
 
-              <ul className="w-full space-y-2">
+              <ul className="w-full space-y-2 max-h-[60vh] overflow-y-auto">
                 {filteredItems.length > 0 ? (
                   filteredItems.map((item) => (
                     <li
                       key={item.name}
-                      className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0"
+                      className="flex justify-between items-center py-2.5 border-b border-gray-100 last:border-0"
                     >
                       <span>{item.name}</span>
                       {item.price > 0 && (
@@ -89,7 +97,7 @@ function Menu() {
                     </li>
                   ))
                 ) : (
-                  <li className="text-center text-gray-400 py-4">
+                  <li className="text-center text-gray-400 py-6">
                     آیتمی یافت نشد
                   </li>
                 )}
