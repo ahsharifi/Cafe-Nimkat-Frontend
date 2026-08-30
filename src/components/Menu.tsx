@@ -286,12 +286,20 @@ function Menu() {
                     <span>جمع کل:</span>
                     <span>{totalPrice.toLocaleString()} تومان</span>
                   </div>
-                  <button
-                    onClick={handlePayment}
-                    className="btn-primary w-full text-white py-3 rounded-xl font-medium transition cursor-pointer"
-                  >
-                    پرداخت و ثبت سفارش
-                  </button>
+                  <div className="flex md:flex-row gap-2">
+                    <button
+                      onClick={handlePayment}
+                      className="btn-primary w-full text-white py-3 rounded-xl font-medium transition cursor-pointer"
+                    >
+                      پرداخت نقدی
+                    </button>
+                    <button
+                      onClick={handlePayment}
+                      className="btn-primary w-full text-white py-3 rounded-xl font-medium transition cursor-pointer"
+                    >
+                      پرداخت آنلاین
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
