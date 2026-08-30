@@ -103,51 +103,70 @@ function Menu() {
             title="اسپرسوبار"
             description={["اسپرسو", "ترک", "کاپوچینو"]}
             category="اسپرسوبار"
+            onClick={handleClickPopover}
           />
           <MenuCategory
             icon={ColdCoffee}
             title="کلد کافی"
             description={["آفوگاتو", "آیس لاته"]}
+            category="کلد کافی"
+            onClick={handleClickPopover}
           />
           <MenuCategory
             icon={HotDrink}
             title="نوشیدنی گرم"
             description={["شیربیسکوئیت", "هات چاکلت"]}
+            category="نوشیدنی گرم"
+            onClick={handleClickPopover}
           />
           <MenuCategory
             icon={Tea}
             title="چای"
             description={["ماسالا", "هل", "دارچین"]}
+            category="چای"
+            onClick={handleClickPopover}
           />
           <MenuCategory
             icon={MilkShake}
             title="میلک شیک"
             description={["شکلاتی", "نوتلا", "شیک پسته"]}
+            category="میلک شیک"
+            onClick={handleClickPopover}
           />
           <MenuCategory
             icon={ColdDrink}
             title="نوشیدنی سرد"
             description={["موهیتو", "پینک", "شیرموز"]}
+            category="نوشیدنی سرد"
+            onClick={handleClickPopover}
           />
           <MenuCategory
             icon={Cake}
             title="کیک و دسر"
             description={["وافل نوتلا", "چیزکیک", "ترامیسو"]}
+            category="کیک و دسر"
+            onClick={handleClickPopover}
           />
           <MenuCategory
             icon={Food}
             title="غذا و سالاد"
             description={["پاستا آلفردو", "ذرت مکزیکی"]}
+            category="غذا و سالاد"
+            onClick={handleClickPopover}
           />
           <MenuCategory
             icon={IceCream}
             title="بستنی"
             description={["شکلاتی", "توت فرنگی", "گردویی"]}
+            category="بستنی"
+            onClick={handleClickPopover}
           />
           <MenuCategory
             icon={Coffee}
             title="دمنوش"
             description={["آرامبخش", "ضدسرماخوردگی"]}
+            category="دمنوش"
+            onClick={handleClickPopover}
           />
         </ul>
       </div>
