@@ -3,6 +3,7 @@ import "./App.css";
 import Hero from "./components/Hero";
 import Menu from "./components/Menu";
 import Lenis from "lenis";
+import Footer from "./components/Footer";
 
 function App() {
   useEffect(() => {
@@ -22,6 +23,7 @@ function App() {
     <>
       <Hero />
       <Menu />
+      <Footer />
     </>
   );
 }
