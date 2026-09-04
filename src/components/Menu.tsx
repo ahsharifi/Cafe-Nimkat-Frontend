@@ -2,13 +2,24 @@ import Coffee from "../assets/icons/coffee.png";
 import MenuCategory from "./MenuCategory";
 import { useEffect, useState } from "react";
 import { ShoppingCart } from "lucide-react";
-import { getMenuCategories } from "../api/api";
+import { getMenuCategories, getCategoryItems } from "../api/api";
+
+interface Category {
+  id: number;
+  title: string;
+  image_url: string | null;
+  sort_order: number;
+  is_active: boolean;
+}
 
 interface ItemsData {
-  name: string;
-  category: string;
+  id: number;
+  category_id: number;
+  title: string;
+  description: string | null;
   price: number;
-  status: boolean;
+  is_available: boolean;
+  sort_order: number;
 }
 
 interface CartItem {
@@ -18,15 +29,7 @@ interface CartItem {
 }
 
 function Menu() {
-  const data: ItemsData[] = [
-    { name: "اسپرسو", category: "اسپرسوبار", price: 85000, status: true },
-    { name: "آفوگاتو", category: "کلد کافی", price: 120000, status: true },
-    { name: "کاپوچینو", category: "اسپرسوبار", price: 95000, status: true },
-    { name: "آیس لاته", category: "کلد کافی", price: 110000, status: true },
-    { name: "هات چاکلت", category: "نوشیدنی گرم", price: 105000, status: true },
-  ];
-
-  const [category, setCategory] = useState("");
+  const [categoryId, setCategoryId] = useState<number | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
@@ -38,16 +41,25 @@ function Menu() {
     }
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [menuItems, setMenuItems] = useState<ItemsData[]>([]);
 
-  function handleClickPopover(selectedCategory: string) {
-    setCategory(selectedCategory);
-    setIsOpen(true);
+  async function handleClickPopover(selectedCategory: number) {
+    try {
+      setCategoryId(selectedCategory);
+
+      const items = await getCategoryItems(selectedCategory);
+
+      setMenuItems(items);
+      setIsOpen(true);
+    } catch (error) {
+      console.error("خطا در دریافت آیتم‌های دسته:", error);
+    }
   }
 
   function closePopover() {
     setIsOpen(false);
-    setCategory("");
+    setCategoryId(null);
   }
 
   function addToCart(item: ItemsData) {
@@ -85,8 +97,6 @@ function Menu() {
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  const filteredItems = data.filter((item) => item.category === category);
-
   function handlePayment() {
     if (cart.length === 0) return alert("سبد خرید خالی است!");
     alert(
@@ -105,13 +115,13 @@ function Menu() {
       .catch(console.error);
   }, []);
 
-  // useEffect(() => {
-  //   getMenuCategories().then(setCategories).catch(console.error);
-  // }, []);
-
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
+
+  const selectedCategory = categories.find(
+    (category) => category.id === categoryId,
+  );
 
   return (
     <div className="menu min-h-screen relative" id="menu">
@@ -157,13 +167,13 @@ function Menu() {
               </button>
 
               <h3 className="text-2xl border-b border-gray-200 w-full text-center pb-3 mb-4">
-                آیتم‌های {category}
+                آیتم‌های {selectedCategory?.title}
               </h3>
 
               <ul className="w-full space-y-3 max-h-[60vh] overflow-y-auto">
-                {filteredItems.length > 0 ? (
-                  filteredItems.map((item) => {
-                    const cartItem = cart.find((c) => c.name === item.name);
+                {menuItems.length > 0 ? (
+                  menuItems.map((item) => {
+                    const cartItem = cart.find((c) => c.name === item.title);
                     const quantity = cartItem ? cartItem.quantity : 0;
 
                     return (
@@ -172,7 +182,7 @@ function Menu() {
                         className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0"
                       >
                         <div>
-                          <p className="font-medium">{item.name}</p>
+                          <p className="font-medium">{item.title}</p>
                           <p className="text-sm text-gray-500">
                             {item.price.toLocaleString()} تومان
                           </p>
@@ -318,81 +328,10 @@ function Menu() {
               key={category.id}
               icon={Coffee}
               title={category.title}
-              category={category.title}
+              categoryId={category.id}
               onClick={handleClickPopover}
             />
           ))}
-
-          {/* <MenuCategory
-            icon={Coffee}
-            title="اسپرسوبار"
-            description={["اسپرسو", "ترک", "کاپوچینو"]}
-            category="اسپرسوبار"
-            onClick={handleClickPopover}
-          />
-          <MenuCategory
-            icon={ColdCoffee}
-            title="کلد کافی"
-            description={["آفوگاتو", "آیس لاته"]}
-            category="کلد کافی"
-            onClick={handleClickPopover}
-          />
-          <MenuCategory
-            icon={HotDrink}
-            title="نوشیدنی گرم"
-            description={["شیربیسکوئیت", "هات چاکلت"]}
-            category="نوشیدنی گرم"
-            onClick={handleClickPopover}
-          />
-          <MenuCategory
-            icon={Tea}
-            title="چای"
-            description={["ماسالا", "هل", "دارچین"]}
-            category="چای"
-            onClick={handleClickPopover}
-          />
-          <MenuCategory
-            icon={MilkShake}
-            title="میلک شیک"
-            description={["شکلاتی", "نوتلا", "شیک پسته"]}
-            category="میلک شیک"
-            onClick={handleClickPopover}
-          />
-          <MenuCategory
-            icon={ColdDrink}
-            title="نوشیدنی سرد"
-            description={["موهیتو", "پینک", "شیرموز"]}
-            category="نوشیدنی سرد"
-            onClick={handleClickPopover}
-          />
-          <MenuCategory
-            icon={Cake}
-            title="کیک و دسر"
-            description={["وافل نوتلا", "چیزکیک", "ترامیسو"]}
-            category="کیک و دسر"
-            onClick={handleClickPopover}
-          />
-          <MenuCategory
-            icon={Food}
-            title="غذا و سالاد"
-            description={["پاستا آلفردو", "ذرت مکزیکی"]}
-            category="غذا و سالاد"
-            onClick={handleClickPopover}
-          />
-          <MenuCategory
-            icon={IceCream}
-            title="بستنی"
-            description={["شکلاتی", "توت فرنگی", "گردویی"]}
-            category="بستنی"
-            onClick={handleClickPopover}
-          />
-          <MenuCategory
-            icon={Coffee}
-            title="دمنوش"
-            description={["آرامبخش", "ضدسرماخوردگی"]}
-            category="دمنوش"
-            onClick={handleClickPopover}
-          /> */}
         </ul>
       </div>
     </div>
