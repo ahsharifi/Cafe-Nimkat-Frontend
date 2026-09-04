@@ -1,18 +1,11 @@
 interface MenuItemProps {
   icon: string;
   title: string;
-  description: string[];
   category: string;
   onClick: (category: string) => void;
 }
 
-function MenuCategory({
-  icon,
-  title,
-  description,
-  category,
-  onClick,
-}: MenuItemProps) {
+function MenuCategory({ icon, title, category, onClick }: MenuItemProps) {
   return (
     <li
       className="menu-item bg-white rounded-xl shadow-gray-200 shadow-lg flex flex-col items-center p-5 gap-2 hover:bg-gray-50 cursor-pointer transition"
@@ -23,10 +16,6 @@ function MenuCategory({
       </div>
 
       <h3 className="text-2xl">{title}</h3>
-
-      <p className="text-sm text-gray-500 text-center">
-        {description.join(" - ")} - ...
-      </p>
     </li>
   );
 }

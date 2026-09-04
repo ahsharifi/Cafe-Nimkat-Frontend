@@ -1,15 +1,8 @@
 import Coffee from "../assets/icons/coffee.png";
-import ColdCoffee from "../assets/icons/cold-coffee.png";
-import HotDrink from "../assets/icons/hot-drink.png";
-import Tea from "../assets/icons/tea.png";
-import MilkShake from "../assets/icons/milk-shake.png";
-import ColdDrink from "../assets/icons/cold-drink.png";
-import Cake from "../assets/icons/cake.png";
-import Food from "../assets/icons/food.png";
-import IceCream from "../assets/icons/ice-cream.png";
 import MenuCategory from "./MenuCategory";
 import { useEffect, useState } from "react";
 import { ShoppingCart } from "lucide-react";
+import { getMenuCategories } from "../api/api";
 
 interface ItemsData {
   name: string;
@@ -45,6 +38,7 @@ function Menu() {
     }
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
 
   function handleClickPopover(selectedCategory: string) {
     setCategory(selectedCategory);
@@ -101,6 +95,19 @@ function Menu() {
     setCart([]);
     setIsCartOpen(false);
   }
+
+  useEffect(() => {
+    getMenuCategories()
+      .then((data) => {
+        console.log("categories:", data);
+        setCategories(data);
+      })
+      .catch(console.error);
+  }, []);
+
+  // useEffect(() => {
+  //   getMenuCategories().then(setCategories).catch(console.error);
+  // }, []);
 
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
@@ -306,7 +313,17 @@ function Menu() {
           </div>
         )}
         <ul className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-          <MenuCategory
+          {categories?.map((category) => (
+            <MenuCategory
+              key={category.id}
+              icon={Coffee}
+              title={category.title}
+              category={category.title}
+              onClick={handleClickPopover}
+            />
+          ))}
+
+          {/* <MenuCategory
             icon={Coffee}
             title="اسپرسوبار"
             description={["اسپرسو", "ترک", "کاپوچینو"]}
@@ -375,7 +392,7 @@ function Menu() {
             description={["آرامبخش", "ضدسرماخوردگی"]}
             category="دمنوش"
             onClick={handleClickPopover}
-          />
+          /> */}
         </ul>
       </div>
     </div>
