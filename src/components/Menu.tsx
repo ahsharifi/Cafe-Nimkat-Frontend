@@ -21,7 +21,6 @@ interface ItemsData {
   id: number;
   category_id: number;
   title: string;
-  description: string | null;
   price: number;
   is_available: boolean;
   sort_order: number;
@@ -56,7 +55,6 @@ function Menu() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [menuItems, setMenuItems] = useState<ItemsData[]>([]);
 
-  // اطلاعات سفارش
   const [isOrderInfoOpen, setIsOrderInfoOpen] = useState(false);
   const [orderType, setOrderType] = useState<OrderType | null>(null);
   const [tableNumber, setTableNumber] = useState("");
@@ -66,7 +64,6 @@ function Menu() {
 
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
-  // نتیجه پرداخت
   const [paymentResult, setPaymentResult] = useState<
     "success" | "failed" | null
   >(null);
@@ -92,7 +89,6 @@ function Menu() {
     setMenuItems([]);
   }
 
-  // اضافه کردن محصول به سبد
   function addToCart(item: ItemsData) {
     setCart((prev) => {
       const existing = prev.find((c) => c.id === item.id);
@@ -119,7 +115,12 @@ function Menu() {
     setCart((prev) =>
       prev
         .map((item) =>
-          item.id === id ? { ...item, quantity: item.quantity + delta } : item,
+          item.id === id
+            ? {
+                ...item,
+                quantity: item.quantity + delta,
+              }
+            : item,
         )
         .filter((item) => item.quantity > 0),
     );
@@ -140,7 +141,6 @@ function Menu() {
     (category) => category.id === categoryId,
   );
 
-  // باز کردن فرم ثبت سفارش
   function openOrderInfo(payment: PaymentMethod) {
     if (cart.length === 0) {
       alert("سبد خرید خالی است!");
@@ -153,7 +153,6 @@ function Menu() {
     setIsOrderInfoOpen(true);
   }
 
-  // ثبت نهایی سفارش
   async function submitOrder() {
     if (!orderType) {
       alert("نوع سفارش را انتخاب کنید.");
@@ -183,7 +182,6 @@ function Menu() {
         })),
       });
 
-      // پرداخت نقدی
       if (paymentMethod === "cash") {
         setCart([]);
         setIsOrderInfoOpen(false);
@@ -195,21 +193,18 @@ function Menu() {
         return;
       }
 
-      // پرداخت آنلاین
       const payment = await getPaymentUrl(order.order.id);
 
-      // سبد را هنوز خالی نمی‌کنیم
-      // چون ممکن است پرداخت ناموفق شود
       window.location.href = payment.payment_url;
     } catch (error) {
       console.error("خطا در ثبت سفارش:", error);
+
       alert("خطا در ثبت سفارش. لطفاً دوباره تلاش کنید.");
     } finally {
       setIsSubmittingOrder(false);
     }
   }
 
-  // دریافت نتیجه callback
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
 
@@ -235,23 +230,22 @@ function Menu() {
     return () => clearTimeout(timer);
   }, []);
 
-  // دریافت دسته‌بندی‌ها
   useEffect(() => {
     getMenuCategories()
       .then((data) => {
         setCategories(data);
       })
-      .catch(console.error);
+      .catch((error) => {
+        console.error("خطا در دریافت دسته‌بندی‌ها:", error);
+      });
   }, []);
 
-  // ذخیره سبد
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
 
   return (
     <div className="menu min-h-screen relative" id="menu">
-      {/* Cart Button */}
       <button
         onClick={() => setIsCartOpen(true)}
         className="btn-primary fixed bottom-6 left-6 z-30 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition cursor-pointer"
@@ -266,7 +260,6 @@ function Menu() {
       </button>
 
       <div className="container mx-auto w-[90%] min-h-screen flex flex-col items-center py-15 gap-2 md:gap-4">
-        {/* Title */}
         <div className="title">
           <h1 className="text-4xl mb-10">امروز چی می چسبه؟</h1>
 
@@ -277,7 +270,6 @@ function Menu() {
           </div>
         </div>
 
-        {/* Category Modal */}
         {isOpen && (
           <div className="fixed inset-0 z-40 flex items-center justify-center">
             <div
@@ -354,7 +346,6 @@ function Menu() {
           </div>
         )}
 
-        {/* Cart */}
         {isCartOpen && (
           <div className="fixed inset-0 z-50 flex justify-end">
             <div
@@ -427,7 +418,6 @@ function Menu() {
                 )}
               </div>
 
-              {/* Cart Footer */}
               {cart.length > 0 && (
                 <div className="border-t p-5 space-y-4">
                   <div className="flex justify-between text-lg font-bold">
@@ -457,7 +447,6 @@ function Menu() {
           </div>
         )}
 
-        {/* Order Info Modal */}
         {isOrderInfoOpen && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center">
             <div
@@ -482,7 +471,6 @@ function Menu() {
                 اطلاعات سفارش
               </h3>
 
-              {/* Order Type */}
               <div className="space-y-3">
                 <p className="font-medium">نوع سفارش:</p>
 
@@ -518,7 +506,6 @@ function Menu() {
                 </div>
               </div>
 
-              {/* Table Number */}
               {orderType === "dine_in" && (
                 <div className="mt-5">
                   <label className="block mb-2 font-medium">شماره میز</label>
@@ -534,7 +521,6 @@ function Menu() {
                 </div>
               )}
 
-              {/* Payment Method */}
               <div className="mt-5">
                 <p className="font-medium mb-2">روش پرداخت:</p>
 
@@ -545,7 +531,6 @@ function Menu() {
                 </div>
               </div>
 
-              {/* Submit */}
               <button
                 onClick={submitOrder}
                 disabled={isSubmittingOrder}
@@ -561,7 +546,6 @@ function Menu() {
           </div>
         )}
 
-        {/* Payment Result Modal */}
         {paymentResult && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center">
             <div className="absolute inset-0 bg-black/50" />
@@ -613,7 +597,6 @@ function Menu() {
           </div>
         )}
 
-        {/* Categories */}
         <ul className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-5">
           {categories.map((category) => (
             <MenuCategory

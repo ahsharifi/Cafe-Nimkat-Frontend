@@ -1,13 +1,32 @@
 const API_URL = import.meta.env.VITE_API_URL;
 
 export const getMenuCategories = async () => {
-  const response = await fetch(`${API_URL}/categories`);
+  const response = await fetch(`${API_URL}/categories`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  const data = await response.json();
 
   if (!response.ok) {
-    throw new Error("Failed to fetch categories");
+    throw new Error(data.message || "خطا در دریافت دسته‌بندی‌ها");
   }
 
-  return response.json();
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (Array.isArray(data.categories)) {
+    return data.categories;
+  }
+
+  if (Array.isArray(data.data)) {
+    return data.data;
+  }
+
+  return [];
 };
 
 export const getCategoryItems = async (categoryId: number) => {
