@@ -1,87 +1,133 @@
 import Coffee from "../assets/icons/coffee.png";
-import ColdCoffee from "../assets/icons/cold-coffee.png";
-import HotDrink from "../assets/icons/hot-drink.png";
-import Tea from "../assets/icons/tea.png";
-import MilkShake from "../assets/icons/milk-shake.png";
-import ColdDrink from "../assets/icons/cold-drink.png";
-import Cake from "../assets/icons/cake.png";
-import Food from "../assets/icons/food.png";
-import IceCream from "../assets/icons/ice-cream.png";
 import MenuCategory from "./MenuCategory";
 import { useEffect, useState } from "react";
 import { ShoppingCart } from "lucide-react";
+import {
+  getMenuCategories,
+  getCategoryItems,
+  createOrder,
+  getPaymentUrl,
+} from "../api/api";
+
+interface Category {
+  id: number;
+  title: string;
+  image_url: string | null;
+  sort_order: number;
+  is_active: boolean;
+}
 
 interface ItemsData {
-  name: string;
-  category: string;
+  id: number;
+  category_id: number;
+  title: string;
   price: number;
-  status: boolean;
+  is_available: boolean;
+  sort_order: number;
 }
 
 interface CartItem {
+  id: number;
   name: string;
   price: number;
   quantity: number;
 }
 
-function Menu() {
-  const data: ItemsData[] = [
-    { name: "اسپرسو", category: "اسپرسوبار", price: 85000, status: true },
-    { name: "آفوگاتو", category: "کلد کافی", price: 120000, status: true },
-    { name: "کاپوچینو", category: "اسپرسوبار", price: 95000, status: true },
-    { name: "آیس لاته", category: "کلد کافی", price: 110000, status: true },
-    { name: "هات چاکلت", category: "نوشیدنی گرم", price: 105000, status: true },
-  ];
+type OrderType = "dine_in" | "takeaway";
+type PaymentMethod = "cash" | "online";
 
-  const [category, setCategory] = useState("");
+function Menu() {
+  const [categoryId, setCategoryId] = useState<number | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
       const savedCart = localStorage.getItem("cart");
       return savedCart ? JSON.parse(savedCart) : [];
     } catch (error) {
-      console.error("خطا در خواندن سبد از localStorage:", error);
+      console.error("خطا در خواندن سبد:", error);
       return [];
     }
   });
+
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  function handleClickPopover(selectedCategory: string) {
-    setCategory(selectedCategory);
-    setIsOpen(true);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [menuItems, setMenuItems] = useState<ItemsData[]>([]);
+
+  const [isOrderInfoOpen, setIsOrderInfoOpen] = useState(false);
+  const [orderType, setOrderType] = useState<OrderType | null>(null);
+  const [tableNumber, setTableNumber] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(
+    null,
+  );
+
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+
+  const [paymentResult, setPaymentResult] = useState<
+    "success" | "failed" | null
+  >(null);
+
+  const [paymentOrderId, setPaymentOrderId] = useState<string | null>(null);
+
+  async function handleClickPopover(selectedCategory: number) {
+    try {
+      setCategoryId(selectedCategory);
+
+      const items = await getCategoryItems(selectedCategory);
+
+      setMenuItems(items);
+      setIsOpen(true);
+    } catch (error) {
+      console.error("خطا در دریافت آیتم‌های دسته:", error);
+    }
   }
 
   function closePopover() {
     setIsOpen(false);
-    setCategory("");
+    setCategoryId(null);
+    setMenuItems([]);
   }
 
   function addToCart(item: ItemsData) {
     setCart((prev) => {
-      const existing = prev.find((c) => c.name === item.name);
+      const existing = prev.find((c) => c.id === item.id);
+
       if (existing) {
         return prev.map((c) =>
-          c.name === item.name ? { ...c, quantity: c.quantity + 1 } : c,
+          c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c,
         );
       }
-      return [...prev, { name: item.name, price: item.price, quantity: 1 }];
+
+      return [
+        ...prev,
+        {
+          id: item.id,
+          name: item.title,
+          price: item.price,
+          quantity: 1,
+        },
+      ];
     });
   }
 
-  function updateQuantity(name: string, delta: number) {
+  function updateQuantity(id: number, delta: number) {
     setCart((prev) =>
       prev
         .map((item) =>
-          item.name === name
-            ? { ...item, quantity: item.quantity + delta }
+          item.id === id
+            ? {
+                ...item,
+                quantity: item.quantity + delta,
+              }
             : item,
         )
         .filter((item) => item.quantity > 0),
     );
   }
 
-  function removeFromCart(name: string) {
-    setCart((prev) => prev.filter((item) => item.name !== name));
+  function removeFromCart(id: number) {
+    setCart((prev) => prev.filter((item) => item.id !== id));
   }
 
   const totalPrice = cart.reduce(
@@ -91,16 +137,108 @@ function Menu() {
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  const filteredItems = data.filter((item) => item.category === category);
+  const selectedCategory = categories.find(
+    (category) => category.id === categoryId,
+  );
 
-  function handlePayment() {
-    if (cart.length === 0) return alert("سبد خرید خالی است!");
-    alert(
-      `پرداخت با موفقیت انجام شد!\nمبلغ: ${totalPrice.toLocaleString()} تومان`,
-    );
-    setCart([]);
-    setIsCartOpen(false);
+  function openOrderInfo(payment: PaymentMethod) {
+    if (cart.length === 0) {
+      alert("سبد خرید خالی است!");
+      return;
+    }
+
+    setPaymentMethod(payment);
+    setOrderType(null);
+    setTableNumber("");
+    setIsOrderInfoOpen(true);
   }
+
+  async function submitOrder() {
+    if (!orderType) {
+      alert("نوع سفارش را انتخاب کنید.");
+      return;
+    }
+
+    if (orderType === "dine_in" && !tableNumber.trim()) {
+      alert("لطفاً شماره میز را وارد کنید.");
+      return;
+    }
+
+    if (!paymentMethod) {
+      alert("روش پرداخت را انتخاب کنید.");
+      return;
+    }
+
+    try {
+      setIsSubmittingOrder(true);
+
+      const order = await createOrder({
+        order_type: orderType,
+        table_number: orderType === "dine_in" ? Number(tableNumber) : null,
+        payment_method: paymentMethod,
+        items: cart.map((item) => ({
+          menu_item_id: item.id,
+          quantity: item.quantity,
+        })),
+      });
+
+      if (paymentMethod === "cash") {
+        setCart([]);
+        setIsOrderInfoOpen(false);
+        setIsCartOpen(false);
+
+        setPaymentResult("success");
+        setPaymentOrderId(String(order.order.id));
+
+        return;
+      }
+
+      const payment = await getPaymentUrl(order.order.id);
+
+      window.location.href = payment.payment_url;
+    } catch (error) {
+      console.error("خطا در ثبت سفارش:", error);
+
+      alert("خطا در ثبت سفارش. لطفاً دوباره تلاش کنید.");
+    } finally {
+      setIsSubmittingOrder(false);
+    }
+  }
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    const payment = params.get("payment");
+    const orderId = params.get("order_id");
+
+    if (payment !== "success" && payment !== "failed") {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setPaymentResult(payment);
+      setPaymentOrderId(orderId);
+
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      if (payment === "success") {
+        setCart([]);
+        setIsCartOpen(false);
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    getMenuCategories()
+      .then((data) => {
+        setCategories(data);
+      })
+      .catch((error) => {
+        console.error("خطا در دریافت دسته‌بندی‌ها:", error);
+      });
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
@@ -112,14 +250,10 @@ function Menu() {
         onClick={() => setIsCartOpen(true)}
         className="btn-primary fixed bottom-6 left-6 z-30 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition cursor-pointer"
       >
-        <span className="text-2xl">
-          <ShoppingCart style={{ color: "#fff" }} />
-        </span>
+        <ShoppingCart style={{ color: "#fff" }} />
+
         {totalItems > 0 && (
-          <span
-            className="absolute -top-1 -right-1 bg-gray-400 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center"
-            style={{ color: "#fff" }}
-          >
+          <span className="absolute -top-1 -right-1 bg-gray-400 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
             {totalItems}
           </span>
         )}
@@ -128,6 +262,7 @@ function Menu() {
       <div className="container mx-auto w-[90%] min-h-screen flex flex-col items-center py-15 gap-2 md:gap-4">
         <div className="title">
           <h1 className="text-4xl mb-10">امروز چی می چسبه؟</h1>
+
           <div className="lines">
             <div className="line"></div>
             <div className="line"></div>
@@ -138,34 +273,37 @@ function Menu() {
         {isOpen && (
           <div className="fixed inset-0 z-40 flex items-center justify-center">
             <div
-              className="absolute inset-0 bg-black/40 animate-fade-in"
+              className="absolute inset-0 bg-black/40"
               onClick={closePopover}
             />
-            <div className="relative w-[90%] max-w-md p-8 bg-white border border-gray-200 shadow-2xl rounded-2xl flex flex-col items-center z-50 animate-scale-in">
+
+            <div className="relative w-[90%] max-w-md p-8 bg-white border border-gray-200 shadow-2xl rounded-2xl flex flex-col items-center z-50">
               <button
                 onClick={closePopover}
-                className="absolute top-4 right-4 cursor-pointer text-gray-400 hover:text-gray-700 text-xl"
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-xl cursor-pointer"
               >
                 ✕
               </button>
 
               <h3 className="text-2xl border-b border-gray-200 w-full text-center pb-3 mb-4">
-                آیتم‌های {category}
+                آیتم‌های {selectedCategory?.title}
               </h3>
 
               <ul className="w-full space-y-3 max-h-[60vh] overflow-y-auto">
-                {filteredItems.length > 0 ? (
-                  filteredItems.map((item) => {
-                    const cartItem = cart.find((c) => c.name === item.name);
-                    const quantity = cartItem ? cartItem.quantity : 0;
+                {menuItems.length > 0 ? (
+                  menuItems.map((item) => {
+                    const cartItem = cart.find((c) => c.id === item.id);
+
+                    const quantity = cartItem?.quantity ?? 0;
 
                     return (
                       <li
-                        key={item.name}
-                        className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0"
+                        key={item.id}
+                        className="flex justify-between items-center py-3 border-b border-gray-100"
                       >
                         <div>
-                          <p className="font-medium">{item.name}</p>
+                          <p className="font-medium">{item.title}</p>
+
                           <p className="text-sm text-gray-500">
                             {item.price.toLocaleString()} تومان
                           </p>
@@ -175,16 +313,11 @@ function Menu() {
                           <button
                             onClick={() => {
                               if (quantity > 0) {
-                                updateQuantity(item.name, -1);
+                                updateQuantity(item.id, -1);
                               }
                             }}
                             disabled={quantity === 0}
-                            className={`w-8 h-8 rounded-md flex items-center justify-center text-lg transition
-                ${
-                  quantity === 0
-                    ? "bg-gray-200 text-white cursor-not-allowed"
-                    : "w-8 h-8 rounded-md bg-gray-300 hover:bg-gray-400 cursor-pointer text-white flex items-center justify-center text-lg transition"
-                }`}
+                            className="w-8 h-8 rounded-md bg-gray-300 text-white flex items-center justify-center cursor-pointer disabled:bg-gray-200 disabled:cursor-not-allowed"
                           >
                             −
                           </button>
@@ -195,7 +328,7 @@ function Menu() {
 
                           <button
                             onClick={() => addToCart(item)}
-                            className="btn-primary w-8 h-8 rounded-md cursor-pointer text-white flex items-center justify-center text-lg transition"
+                            className="btn-primary w-8 h-8 rounded-md text-white flex items-center justify-center cursor-pointer"
                           >
                             +
                           </button>
@@ -216,13 +349,14 @@ function Menu() {
         {isCartOpen && (
           <div className="fixed inset-0 z-50 flex justify-end">
             <div
-              className="absolute inset-0 bg-black/40 animate-fade-in"
+              className="absolute inset-0 bg-black/40"
               onClick={() => setIsCartOpen(false)}
             />
 
-            <div className="relative w-full max-w-md h-full bg-white shadow-2xl flex flex-col animate-slide-in">
+            <div className="relative w-full max-w-md h-full bg-white shadow-2xl flex flex-col">
               <div className="flex items-center justify-between p-5 border-b">
                 <h3 className="text-xl font-bold">سبد خرید</h3>
+
                 <button
                   onClick={() => setIsCartOpen(false)}
                   className="text-gray-400 hover:text-gray-700 text-xl cursor-pointer"
@@ -241,11 +375,12 @@ function Menu() {
                   <ul className="space-y-4">
                     {cart.map((item) => (
                       <li
-                        key={item.name}
+                        key={item.id}
                         className="flex items-center justify-between gap-3 border-b pb-4"
                       >
                         <div className="flex-1">
                           <p className="font-medium">{item.name}</p>
+
                           <p className="text-sm text-gray-500">
                             {item.price.toLocaleString()} تومان
                           </p>
@@ -253,23 +388,26 @@ function Menu() {
 
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => updateQuantity(item.name, -1)}
+                            onClick={() => updateQuantity(item.id, -1)}
                             className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center cursor-pointer"
                           >
                             −
                           </button>
+
                           <span className="w-6 text-center">
                             {item.quantity}
                           </span>
+
                           <button
-                            onClick={() => updateQuantity(item.name, 1)}
+                            onClick={() => updateQuantity(item.id, 1)}
                             className="btn-primary w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
                           >
                             +
                           </button>
                         </div>
+
                         <button
-                          onClick={() => removeFromCart(item.name)}
+                          onClick={() => removeFromCart(item.id)}
                           className="text-red-500 hover:text-red-700 text-sm cursor-pointer"
                         >
                           حذف
@@ -284,18 +422,21 @@ function Menu() {
                 <div className="border-t p-5 space-y-4">
                   <div className="flex justify-between text-lg font-bold">
                     <span>جمع کل:</span>
+
                     <span>{totalPrice.toLocaleString()} تومان</span>
                   </div>
-                  <div className="flex md:flex-row gap-2">
+
+                  <div className="flex gap-2">
                     <button
-                      onClick={handlePayment}
-                      className="btn-primary w-full text-white py-3 rounded-xl font-medium transition cursor-pointer"
+                      onClick={() => openOrderInfo("cash")}
+                      className="btn-primary w-full text-white py-3 rounded-xl font-medium cursor-pointer"
                     >
                       پرداخت نقدی
                     </button>
+
                     <button
-                      onClick={handlePayment}
-                      className="btn-primary w-full text-white py-3 rounded-xl font-medium transition cursor-pointer"
+                      onClick={() => openOrderInfo("online")}
+                      className="btn-primary w-full text-white py-3 rounded-xl font-medium cursor-pointer"
                     >
                       پرداخت آنلاین
                     </button>
@@ -305,77 +446,167 @@ function Menu() {
             </div>
           </div>
         )}
+
+        {isOrderInfoOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center">
+            <div
+              className="absolute inset-0 bg-black/50"
+              onClick={() => {
+                if (!isSubmittingOrder) {
+                  setIsOrderInfoOpen(false);
+                }
+              }}
+            />
+
+            <div className="relative bg-white w-[90%] max-w-md rounded-2xl shadow-2xl p-6 z-10">
+              <button
+                onClick={() => setIsOrderInfoOpen(false)}
+                disabled={isSubmittingOrder}
+                className="absolute top-4 right-4 text-gray-400 text-xl cursor-pointer"
+              >
+                ✕
+              </button>
+
+              <h3 className="text-2xl font-bold text-center mb-6">
+                اطلاعات سفارش
+              </h3>
+
+              <div className="space-y-3">
+                <p className="font-medium">نوع سفارش:</p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOrderType("dine_in");
+                    }}
+                    className={`py-3 rounded-xl border cursor-pointer ${
+                      orderType === "dine_in"
+                        ? "btn-primary text-white"
+                        : "bg-gray-50"
+                    }`}
+                  >
+                    داخل سالن
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOrderType("takeaway");
+                      setTableNumber("");
+                    }}
+                    className={`py-3 rounded-xl border cursor-pointer ${
+                      orderType === "takeaway"
+                        ? "btn-primary text-white"
+                        : "bg-gray-50"
+                    }`}
+                  >
+                    بیرون‌بر
+                  </button>
+                </div>
+              </div>
+
+              {orderType === "dine_in" && (
+                <div className="mt-5">
+                  <label className="block mb-2 font-medium">شماره میز</label>
+
+                  <input
+                    type="number"
+                    min="1"
+                    value={tableNumber}
+                    onChange={(e) => setTableNumber(e.target.value)}
+                    placeholder="مثلاً 5"
+                    className="w-full border rounded-xl px-4 py-3 outline-none focus:border-gray-400"
+                  />
+                </div>
+              )}
+
+              <div className="mt-5">
+                <p className="font-medium mb-2">روش پرداخت:</p>
+
+                <div className="bg-gray-50 rounded-xl p-3 text-center">
+                  {paymentMethod === "cash"
+                    ? "💵 پرداخت نقدی"
+                    : "💳 پرداخت آنلاین"}
+                </div>
+              </div>
+
+              <button
+                onClick={submitOrder}
+                disabled={isSubmittingOrder}
+                className="btn-primary w-full text-white py-3 rounded-xl mt-6 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmittingOrder
+                  ? "در حال ثبت سفارش..."
+                  : paymentMethod === "online"
+                    ? "ادامه و پرداخت"
+                    : "ثبت سفارش"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {paymentResult && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/50" />
+
+            <div className="relative bg-white w-[90%] max-w-md rounded-2xl shadow-2xl p-8 text-center">
+              {paymentResult === "success" ? (
+                <>
+                  <div className="text-6xl mb-4">✅</div>
+
+                  <h3 className="text-2xl font-bold text-green-600 mb-3">
+                    پرداخت موفق بود
+                  </h3>
+
+                  <p className="text-gray-600">سفارش شما با موفقیت ثبت شد.</p>
+
+                  {paymentOrderId && (
+                    <p className="mt-3 text-sm text-gray-500">
+                      شماره سفارش: {paymentOrderId}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="text-6xl mb-4">❌</div>
+
+                  <h3 className="text-2xl font-bold text-red-600 mb-3">
+                    پرداخت ناموفق بود
+                  </h3>
+
+                  <p className="text-gray-600">
+                    پرداخت انجام نشد. می‌توانید دوباره تلاش کنید.
+                  </p>
+
+                  {paymentOrderId && (
+                    <p className="mt-3 text-sm text-gray-500">
+                      شماره سفارش: {paymentOrderId}
+                    </p>
+                  )}
+                </>
+              )}
+
+              <button
+                onClick={() => setPaymentResult(null)}
+                className="btn-primary w-full text-white py-3 rounded-xl mt-6 cursor-pointer"
+              >
+                بستن
+              </button>
+            </div>
+          </div>
+        )}
+
         <ul className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-          <MenuCategory
-            icon={Coffee}
-            title="اسپرسوبار"
-            description={["اسپرسو", "ترک", "کاپوچینو"]}
-            category="اسپرسوبار"
-            onClick={handleClickPopover}
-          />
-          <MenuCategory
-            icon={ColdCoffee}
-            title="کلد کافی"
-            description={["آفوگاتو", "آیس لاته"]}
-            category="کلد کافی"
-            onClick={handleClickPopover}
-          />
-          <MenuCategory
-            icon={HotDrink}
-            title="نوشیدنی گرم"
-            description={["شیربیسکوئیت", "هات چاکلت"]}
-            category="نوشیدنی گرم"
-            onClick={handleClickPopover}
-          />
-          <MenuCategory
-            icon={Tea}
-            title="چای"
-            description={["ماسالا", "هل", "دارچین"]}
-            category="چای"
-            onClick={handleClickPopover}
-          />
-          <MenuCategory
-            icon={MilkShake}
-            title="میلک شیک"
-            description={["شکلاتی", "نوتلا", "شیک پسته"]}
-            category="میلک شیک"
-            onClick={handleClickPopover}
-          />
-          <MenuCategory
-            icon={ColdDrink}
-            title="نوشیدنی سرد"
-            description={["موهیتو", "پینک", "شیرموز"]}
-            category="نوشیدنی سرد"
-            onClick={handleClickPopover}
-          />
-          <MenuCategory
-            icon={Cake}
-            title="کیک و دسر"
-            description={["وافل نوتلا", "چیزکیک", "ترامیسو"]}
-            category="کیک و دسر"
-            onClick={handleClickPopover}
-          />
-          <MenuCategory
-            icon={Food}
-            title="غذا و سالاد"
-            description={["پاستا آلفردو", "ذرت مکزیکی"]}
-            category="غذا و سالاد"
-            onClick={handleClickPopover}
-          />
-          <MenuCategory
-            icon={IceCream}
-            title="بستنی"
-            description={["شکلاتی", "توت فرنگی", "گردویی"]}
-            category="بستنی"
-            onClick={handleClickPopover}
-          />
-          <MenuCategory
-            icon={Coffee}
-            title="دمنوش"
-            description={["آرامبخش", "ضدسرماخوردگی"]}
-            category="دمنوش"
-            onClick={handleClickPopover}
-          />
+          {categories.map((category) => (
+            <MenuCategory
+              key={category.id}
+              icon={Coffee}
+              title={category.title}
+              categoryId={category.id}
+              onClick={handleClickPopover}
+            />
+          ))}
         </ul>
       </div>
     </div>
